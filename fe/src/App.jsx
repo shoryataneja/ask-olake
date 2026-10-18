@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import "./App.css";
 
-const API_BASE = "http://localhost:3000";
+const API_BASE = "https://ask-olake-lr0d.onrender.com";
 
 export default function App() {
   const [messages, setMessages] = useState([
