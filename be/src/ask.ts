@@ -53,7 +53,7 @@ function parseReply(raw: string): ModelReply {
   return { answerable, answer, used_chunk_ids: ids };
 }
 
-async function callModel(model: string, question: string, chunks: Chunk[]): Promise<ModelReply> {
+async function callModel(models: string[], question: string, chunks: Chunk[]): Promise<ModelReply> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 60_000);
   try {
@@ -65,7 +65,9 @@ async function callModel(model: string, question: string, chunks: Chunk[]): Prom
         "x-title": "ask-olake",
       },
       body: JSON.stringify({
-        model,
+        // OpenRouter model fallbacks: first in the chain that the key allows
+        // and that responds wins — matches the mandated priority order.
+        models,
         temperature: 0.2,
         max_tokens: 2048,
         messages: [
@@ -81,13 +83,16 @@ async function callModel(model: string, question: string, chunks: Chunk[]): Prom
     }
     const data = (await res.json()) as {
       choices?: { message?: { content?: string } }[];
+      model?: string;
     };
     const content = data.choices?.[0]?.message?.content;
     if (!content) throw new Error("no content in completion");
     try {
       return parseReply(content);
     } catch (err) {
-      console.warn(`[ask] unparseable reply from ${model}: ${JSON.stringify(content).slice(0, 600)}`);
+      console.warn(
+        `[ask] unparseable reply from ${data.model ?? models[0]}: ${JSON.stringify(content).slice(0, 600)}`
+      );
       throw err;
     }
   } finally {
@@ -96,11 +101,18 @@ async function callModel(model: string, question: string, chunks: Chunk[]): Prom
 }
 
 async function callWithFallback(question: string, chunks: Chunk[]): Promise<ModelReply> {
-  const models = [config.answerModel, config.answerModelBackup].filter(Boolean);
+  const chain = config.answerModels;
+  // 1) one request with the full fallback chain (handles provider errors/403s)
+  try {
+    return await callModel(chain, question, chunks);
+  } catch (err) {
+    console.warn(`[ask] chain request failed: ${err instanceof Error ? err.message : err}`);
+  }
+  // 2) parse-level failures: retry each model individually (first good generation wins)
   let lastError: Error | null = null;
-  for (const model of models) {
+  for (const model of chain) {
     try {
-      return await callModel(model, question, chunks);
+      return await callModel([model], question, chunks);
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
       console.warn(`[ask] model ${model} failed: ${lastError.message}`);

@@ -7,6 +7,8 @@ get a grounded answer built only from the docs, with clickable source links.
 **Live endpoints**
 
 - `POST https://ask-olake-lr0d.onrender.com/ask` — `{"question": "..."}` → `{"answer": "...", "sources": ["<url>", ...]}`
+- `GET /version` — `{"commit": ..., "deployment": ...}` read from the deploy platform's env (`RENDER_GIT_COMMIT` / `VERCEL_GIT_COMMIT_SHA`, `RENDER_INSTANCE_ID` / `VERCEL_DEPLOYMENT_ID`) — never hardcoded
+- `GET /models` — model ids fetched live from OpenRouter's `/models/user` (filtered by the key's restrictions), never typed out
 - `GET /health`, `GET /healthz` — liveness
 - `GET /widget.js` — embeddable chat widget (see [Embedding](#embedding-a-chat-ui))
 
@@ -65,8 +67,12 @@ never presented as citations for a real answer.
 from a cached sparse clone of `olake-docs`; a scheduled workflow re-runs it
 daily so new docs pages flow in without a manual step.
 
-**Model IDs come from env, never code** — `FAST_MODEL`, `ANSWER_MODEL`,
-`ANSWER_MODEL_BACKUP` (OpenRouter ids) are read in `src/config.ts`.
+**Model IDs come from env, never code** — `ANSWER_MODELS` is a comma-separated
+priority chain read in `src/config.ts`, sent to OpenRouter as the `models`
+fallback array in one request: `z-ai/glm-4.7-flash` →
+`google/gemini-2.5-flash-lite` → `deepseek/deepseek-v4.1-flash` (the key is
+restricted to exactly these three). A parse-level failure retries each model
+individually before falling back to an honest failure message.
 
 ## Indexing
 

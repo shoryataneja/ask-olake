@@ -13,6 +13,34 @@ app.use("/*", cors({ origin: "*" }));
 app.get("/health", (c) => c.json({ status: "ok" }));
 app.get("/healthz", (c) => c.json({ status: "ok" }));
 
+app.get("/version", (c) =>
+  c.json({
+    commit: process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.RENDER_GIT_COMMIT ?? "",
+    deployment:
+      process.env.VERCEL_DEPLOYMENT_ID ?? process.env.RENDER_INSTANCE_ID ?? "",
+  })
+);
+
+app.get("/models", async (c) => {
+  try {
+    const res = await fetch("https://openrouter.ai/api/v1/models/user", {
+      headers: { authorization: `Bearer ${config.openrouterApiKey}` },
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!res.ok) {
+      return c.json({ error: `OpenRouter responded ${res.status}` }, 502);
+    }
+    const data = (await res.json()) as { data?: { id?: string }[] };
+    const models = (data.data ?? [])
+      .map((m) => m.id)
+      .filter((id): id is string => typeof id === "string");
+    return c.json({ models });
+  } catch (err) {
+    console.error("[models] OpenRouter fetch failed:", err);
+    return c.json({ error: "failed to reach OpenRouter" }, 502);
+  }
+});
+
 app.post("/ask", async (c) => {
   let body: unknown;
   try {

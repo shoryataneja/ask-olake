@@ -16,18 +16,26 @@ if (existsSync(envPath)) {
   }
 }
 
+// Answer-model priority chain (primary first, then OpenRouter fallbacks).
+// ANSWER_MODELS is comma-separated; legacy ANSWER_MODEL/ANSWER_MODEL_BACKUP still work.
+const chainSource =
+  process.env.ANSWER_MODELS ??
+  [process.env.ANSWER_MODEL, process.env.ANSWER_MODEL_BACKUP].filter(Boolean).join(",");
+
 export const config = {
   port: Number(process.env.PORT ?? 3000),
   enableDebug: process.env.ENABLE_DEBUG === "true",
   openrouterApiKey: process.env.OPENROUTER_API_KEY ?? "",
   fastModel: process.env.FAST_MODEL ?? "",
-  answerModel: process.env.ANSWER_MODEL ?? "",
-  answerModelBackup: process.env.ANSWER_MODEL_BACKUP ?? "",
+  answerModels: chainSource
+    .split(",")
+    .map((m) => m.trim())
+    .filter(Boolean),
 };
 
 if (!config.openrouterApiKey) {
   console.warn("[config] OPENROUTER_API_KEY is not set — LLM features will fail when enabled");
 }
-if (!config.fastModel || !config.answerModel || !config.answerModelBackup) {
-  console.warn("[config] one or more model env vars are not set");
+if (config.answerModels.length === 0) {
+  console.warn("[config] no answer models configured (ANSWER_MODELS is empty)");
 }
