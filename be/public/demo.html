@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OLake Docs (widget embed preview)</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, sans-serif;
+        color: #1a1d21;
+        background: #fafbfc;
+      }
+      main {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 48px 24px;
+        line-height: 1.7;
+      }
+      h1 { margin-top: 0; }
+      code { background: #eef1f5; padding: 2px 5px; border-radius: 4px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>OLake documentation (embed preview)</h1>
+      <p>
+        This page pretends to be a docs site. The floating
+        <strong>?</strong> button at the bottom-right is the Ask OLake widget,
+        embedded with a single script tag — nothing else on this page knows
+        about it.
+      </p>
+      <p>Embed snippet:</p>
+      <pre><code>&lt;script src="https://ask-olake-lr0d.onrender.com/widget.js" defer&gt;&lt;/script&gt;</code></pre>
+      <p>
+        Try asking: <em>How do I configure Postgres CDC?</em> or
+        <em>What sync modes does OLake support?</em>
+      </p>
+    </main>
+    <script src="/widget.js" defer></script>
+  </body>
+</html>
