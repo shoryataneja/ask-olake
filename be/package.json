@@ -14,7 +14,8 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.19.0",
-    "hono": "^4.9.0"
+    "hono": "^4.9.0",
+    "minisearch": "^7.2.0"
   },
   "devDependencies": {
     "@types/node": "^22.15.0",

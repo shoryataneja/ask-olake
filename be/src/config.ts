@@ -1,3 +1,21 @@
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+// Load be/.env if present (local dev). Real env vars (Render) always win.
+const envPath = join(dirname(fileURLToPath(import.meta.url)), "..", ".env");
+if (existsSync(envPath)) {
+  for (const line of readFileSync(envPath, "utf8").split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const eq = trimmed.indexOf("=");
+    if (eq <= 0) continue;
+    const key = trimmed.slice(0, eq).trim();
+    const value = trimmed.slice(eq + 1).trim();
+    if (!(key in process.env)) process.env[key] = value;
+  }
+}
+
 export const config = {
   port: Number(process.env.PORT ?? 3000),
   enableDebug: process.env.ENABLE_DEBUG === "true",
